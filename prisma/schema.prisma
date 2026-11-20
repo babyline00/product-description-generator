@@ -1,0 +1,59 @@
+// Product Description Generator — Prisma schema
+//
+// SQLite is used as the local-first store. Products are the primary entity —
+// each row carries both the source attributes (sku, name, brand, category,
+// features, specs, price, currentDescription) and the generated copy
+// (generatedDescription, variantA, variantB, keywords, tonePreset, status).
+//
+// BatchJob records track each bulk-generation run for the right-sidebar
+// progress panel. TonePreset rows are seeded at first run with the five
+// built-in presets (premium, casual, technical, luxury, value) and the user
+// can create more through the API.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id                   String   @id @default(cuid())
+  sku                  String   @unique
+  name                 String
+  brand                String?
+  category             String?
+  features             String   // semicolon-separated list of feature strings
+  specs                String   // semicolon-separated "key=value" pairs
+  price                Float?
+  currentDescription   String?
+  generatedDescription String?
+  variantA             String?
+  variantB             String?
+  tonePreset           String?
+  keywords             String?  // comma-separated SEO keywords
+  status               String   @default("pending") // pending | generated | error
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model TonePreset {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  systemPrompt String
+  example      String
+  createdAt    DateTime @default(now())
+}
+
+model BatchJob {
+  id           String    @id @default(cuid())
+  tonePresetId String
+  productIds   String    // JSON-stringified array of product IDs
+  status       String    @default("running") // running | completed | failed
+  progress     Int       @default(0)
+  total        Int       @default(0)
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+}
